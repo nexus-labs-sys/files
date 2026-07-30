@@ -1,0 +1,60 @@
+/* =============================================
+   Self-hosted fonts — replaces Google Fonts link
+   Place this file at: /fonts/fonts.css
+   Font files go in the same /fonts/ folder
+   ============================================= */
+
+/* Cormorant Garamond — Normal */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('cormorant-garamond-300.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('cormorant-garamond-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('cormorant-garamond-500.woff2') format('woff2');
+}
+
+/* Cormorant Garamond — Italic */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url('cormorant-garamond-300italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('cormorant-garamond-400italic.woff2') format('woff2');
+}
+
+/* DM Sans */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('dm-sans-300.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('dm-sans-400.woff2') format('woff2');
+}
