@@ -1,4 +1,3 @@
-
 // #------------------------------------
 /* ═════════════════════════════════════════════════════════════
    nsl-streak-extras.js
@@ -325,6 +324,7 @@
    array empty and this section just won't render anything.
 ═══════════════════════════════════════════════════════════════ */
 (function () {
+  console.log('[NSL] nsl-streaks-extra.js LOADED — patched build with Discord openExternalLink routing (build: 2026-07-30-v2)');
   const NSL_ESSENTIAL_LINKS = [
     { label: 'Discord', url: 'https://discord.gg/9pBJs3w9RU', icon: '💬' },
     { label: 'Website', url: 'https://quietplace.space', icon: '🌐' },
