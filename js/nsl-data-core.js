@@ -26,7 +26,7 @@ if (IS_DISCORD && window.DiscordSDKLib && window.DiscordSDKLib.patchUrlMappings)
 
 const WORKER_PREFIX = IS_DISCORD
   ? '/worker'
-  : 'https://aged-cloud-bfd5.priyan-node.workers.dev/';
+  : 'https://aged-cloud-bfd5.priyan-node.workers.dev';   // no trailing slash
 
 const NSL_DISCORD_APP_ID = '1532256337990389880';
 
@@ -47,9 +47,7 @@ window.__nslDiscordSdkReadyPromise = Promise.resolve(false);
 
 if (IS_DISCORD && window.DiscordSDKLib && typeof window.DiscordSDKLib.DiscordSDK === 'function') {
   try {
-    __nslDiscordSdk = new window.DiscordSDKLib.DiscordSDK(NSL_DISCORD_APP_ID, {
-      instanceId: NSL_INSTANCE_ID || NSL_FRAME_ID
-    });
+    __nslDiscordSdk = new window.DiscordSDKLib.DiscordSDK(NSL_DISCORD_APP_ID);
     window.__nslDiscordSdk = __nslDiscordSdk;
     window.__nslDiscordSdkReadyPromise = __nslDiscordSdk.ready()
       .then(() => {
