@@ -387,6 +387,24 @@
     .btn-retry.visible { display: block; }
     .btn-retry:hover { border-color: rgba(232,160,96,.55); background: rgba(232,160,96,0.16); }
 
+    /* ── Test-link button (temporary diagnostic) ─────────────────── */
+    .btn-test-link {
+      display: none;
+      padding: 10px 24px; min-height: 40px;
+      background: rgba(110,160,220,0.10); border: 1px solid rgba(110,160,220,0.35);
+      border-radius: var(--radius); color: #a8c8f0;
+      font-family: 'DM Sans', sans-serif; font-size: .68rem;
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; transition: all .3s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-test-link.visible { display: block; }
+    .btn-test-link:hover { border-color: rgba(110,160,220,.6); background: rgba(110,160,220,0.18); }
+    .test-link-result {
+      font-size: .63rem; color: var(--muted); letter-spacing: .3px;
+      line-height: 1.6; max-width: 300px; word-break: break-word;
+    }
+
     /* ── Device-blocked screen (phone / mobile detected) ────────────── */
     #device-blocked {
       display: none;
@@ -468,7 +486,8 @@
     <div class="gate-status" id="gate-status">Signing you in with Discord…</div>
     <div class="gate-spinner" id="gate-spinner"></div>
     <button class="btn-retry" id="btn-retry" type="button" aria-label="Retry sign-in">Retry</button>
-    
+    <button class="btn-test-link" id="btn-test-link" type="button" aria-label="Test external link">Test Open External Link</button>
+    <div class="test-link-result" id="test-link-result"></div>
   </div>
 
   <!-- NORMAL WEB LOGIN -->
@@ -590,6 +609,18 @@
 <script>
 
 console.log("BUILD_TEST_2026_06_18_v1");
+
+/* ══════════════════════════════════════════════════════════════════
+   TEMPORARY DIAGNOSTIC FLAG
+   When true: after the Discord handshake (sdk.ready()) succeeds, we
+   stop BEFORE authorize/authenticate/Firebase and just show a button
+   that calls sdk.commands.openExternalLink(). This isolates whether
+   external-link opening works at all, independent of auth/payment
+   plumbing. Flip back to false (or delete this block) once confirmed.
+   ══════════════════════════════════════════════════════════════════ */
+const NSL_TEST_MODE = true;
+const NSL_TEST_URL = "htpps://quietplace.space"; // swap for your real payment link once ready() is confirmed working
+
 const startupParams = new URLSearchParams(window.location.search);
 
 const DISCORD_INSTANCE_ID = startupParams.get("frame_id") || startupParams.get("instance_id");
@@ -754,6 +785,15 @@ async function runDiscordAuth(DiscordSDK) {
 
     console.log("[NSL] after sdk.ready()");
 
+    /* ── TEST MODE: stop right here, before authorize/auth/Firebase.
+       Show a button that calls openExternalLink so we can confirm,
+       in isolation, whether link-opening works inside this Activity. ── */
+    if (NSL_TEST_MODE) {
+      setGateStatus("Handshake OK ✶ Ready to test external link.");
+      showTestLinkButton(sdk);
+      return;
+    }
+
     setGateStatus("Requesting access...");
 
     const authResult = await sdk.commands.authorize({
@@ -907,6 +947,31 @@ async function runDiscordAuth(DiscordSDK) {
       };
     }
   }
+}
+
+function showTestLinkButton(sdk) {
+  const btn = document.getElementById("btn-test-link");
+  const resultEl = document.getElementById("test-link-result");
+  if (!btn) return;
+
+  btn.classList.add("visible");
+  resultEl.textContent = "";
+
+  btn.onclick = async () => {
+    btn.disabled = true;
+    resultEl.textContent = "Calling openExternalLink(" + NSL_TEST_URL + ")…";
+    try {
+      const res = await sdk.commands.openExternalLink({ url: NSL_TEST_URL });
+      console.log("[NSL] openExternalLink result:", res);
+      resultEl.textContent = "Result: " + JSON.stringify(res) +
+        " — if a browser tab/prompt opened, links work. If 'opened' is false/null, check the app's URL Mappings / external link allowlist in the Discord Dev Portal.";
+    } catch (err) {
+      console.error("[NSL] openExternalLink failed:", err);
+      resultEl.textContent = "Error: " + String(err.message || err);
+    } finally {
+      btn.disabled = false;
+    }
+  };
 }
 
 function setGateStatus(text) {
