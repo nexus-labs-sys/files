@@ -433,7 +433,7 @@
 }
 #view-hub *{margin:0;padding:0;box-sizing:border-box}
 #view-hub html{scroll-behavior:smooth}
-#view-hub{font-family:"DM Sans",sans-serif;background:var(--bg-deep);color:var(--text-main);min-height:100vh;overflow-x:hidden;transition:background 1.2s ease,color 1.2s ease;-webkit-tap-highlight-color:transparent;cursor:auto}
+#view-hub{position:relative;font-family:"DM Sans",sans-serif;background:var(--bg-deep);color:var(--text-main);min-height:100vh;overflow-x:hidden;transition:background 1.2s ease,color 1.2s ease;-webkit-tap-highlight-color:transparent;cursor:auto}
 #view-hub #bg-layer{
   position:fixed;inset:0;z-index:0;
   background:radial-gradient(ellipse 80% 60% at 20% 10%,var(--bg-grad-1) 0%,transparent 60%),
@@ -1333,7 +1333,7 @@
 </div>
 
 <div id="app-content" style="display:none">
-<div id="view-focus">
+<div id="view-focus-main">
 
 <img id="bg-media" src="" alt="" aria-hidden="true">
 <video id="bg-video" muted loop playsinline></video>

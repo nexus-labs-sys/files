@@ -10,7 +10,7 @@
 ═══════════════════════════════════════════════════════════════ */
 
 function nslShowView(view) {
-  const focusEl = document.getElementById('view-focus');
+  const focusEl = document.getElementById('view-focus-main');
   const hubEl = document.getElementById('view-hub');
   if (!focusEl || !hubEl) return;
   const showingHub = view === 'hub';
