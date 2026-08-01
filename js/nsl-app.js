@@ -543,17 +543,6 @@ window.addEventListener('storage', e => {
 
 console.log("BUILD_TEST_2026_06_18_v1");
 
-/* ══════════════════════════════════════════════════════════════════
-   TEMPORARY DIAGNOSTIC FLAG
-   When true: after the shared Discord SDK is ready, we stop BEFORE
-   authorize/authenticate/Firebase and just show a button that calls
-   sdk.commands.openExternalLink(). This isolates whether external-link
-   opening works at all, independent of auth/payment plumbing. Flip
-   back to false (or delete this block) once confirmed.
-   ══════════════════════════════════════════════════════════════════ */
-const NSL_TEST_MODE = true;
-const NSL_TEST_URL = "htpps://quietplace.space"; // ⚠ typo — should be "https://", fix before using for real
-
 const DISCORD_REDIRECT_URI = "https://nexus-labs-sys.github.io/files/";
 
 /* Used by both the Discord Activity auth flow and the normal web login flow. */
@@ -629,15 +618,6 @@ async function runDiscordAuth() {
     }
 
     console.log("[NSL] after sdk ready (shared instance)");
-
-    /* ── TEST MODE: stop right here, before authorize/auth/Firebase.
-       Show a button that calls openExternalLink so we can confirm,
-       in isolation, whether link-opening works inside this Activity. ── */
-    if (NSL_TEST_MODE) {
-      setGateStatus("Handshake OK ✶ Ready to test external link.");
-      showTestLinkButton(sdk);
-      return;
-    }
 
     setGateStatus("Requesting access...");
 
@@ -797,31 +777,6 @@ async function runDiscordAuth() {
       };
     }
   }
-}
-
-function showTestLinkButton(sdk) {
-  const btn = document.getElementById("btn-test-link");
-  const resultEl = document.getElementById("test-link-result");
-  if (!btn) return;
-
-  btn.classList.add("visible");
-  resultEl.textContent = "";
-
-  btn.onclick = async () => {
-    btn.disabled = true;
-    resultEl.textContent = "Calling openExternalLink(" + NSL_TEST_URL + ")…";
-    try {
-      const res = await sdk.commands.openExternalLink({ url: NSL_TEST_URL });
-      console.log("[NSL] openExternalLink result:", res);
-      resultEl.textContent = "Result: " + JSON.stringify(res) +
-        " — if a browser tab/prompt opened, links work. If 'opened' is false/null, check the app's URL Mappings / external link allowlist in the Discord Dev Portal.";
-    } catch (err) {
-      console.error("[NSL] openExternalLink failed:", err);
-      resultEl.textContent = "Error: " + String(err.message || err);
-    } finally {
-      btn.disabled = false;
-    }
-  };
 }
 
 function setGateStatus(text) {
