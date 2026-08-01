@@ -1,4 +1,3 @@
-
 // #------------------------------------
 /* ═════════════════════════════════════════════════════════════
    nsl-streak-extras.js
@@ -298,10 +297,20 @@
       document.body.appendChild(el);
     }
     const linkHtml = a.link
-      ? ' <a href="' + a.link.url + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;margin-left:6px">' + a.link.label + '</a>'
+      ? ' <a href="' + a.link.url + '" class="nsl-announce-link" rel="noopener" style="color:var(--accent);text-decoration:underline;margin-left:6px">' + a.link.label + '</a>'
       : '';
     el.innerHTML = '<span>📢 ' + a.message + linkHtml + '</span><button class="nsl-announce-close" title="Dismiss">×</button>';
     el.querySelector('.nsl-announce-close').onclick = () => dismiss(a.id);
+    const linkEl = el.querySelector('.nsl-announce-link');
+    if (linkEl) {
+      // Same reasoning as the essential links below — target="_blank"
+      // gets blocked in the sandboxed Discord Activity iframe.
+      linkEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.nslOpenExternalLink === 'function') window.nslOpenExternalLink(a.link.url);
+        else window.open(a.link.url, '_blank', 'noopener');
+      });
+    }
     requestAnimationFrame(() => {
       el.classList.add('show');
       document.body.classList.add('nsl-announce-open');
@@ -359,9 +368,18 @@
       const a = document.createElement('a');
       a.className = 'nsl-link-pill';
       a.href = l.url;
-      a.target = '_blank';
+      // Not target="_blank" — a real anchor navigation/new-window request
+      // is blocked in the sandboxed Discord Activity iframe (no
+      // 'allow-popups'). nslOpenExternalLink() routes through the
+      // Discord SDK when running inside an Activity, and falls back to
+      // a normal window.open() on the web.
       a.rel = 'noopener';
       a.innerHTML = '<span>' + (l.icon || '🔗') + '</span><span>' + l.label + '</span>';
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.nslOpenExternalLink === 'function') window.nslOpenExternalLink(l.url);
+        else window.open(l.url, '_blank', 'noopener');
+      });
       row.appendChild(a);
     });
   }

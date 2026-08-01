@@ -144,6 +144,35 @@ function nslReinitDiscordSdk() {
 }
 window.nslReinitDiscordSdk = nslReinitDiscordSdk;
 
+/* Opens an external URL correctly in BOTH environments:
+     - Inside a Discord Activity, the iframe is sandboxed without
+       'allow-popups', so window.open()/target="_blank" is silently
+       blocked by the browser. Must go through the SDK's
+       openExternalLink command instead (uses the shared SDK instance
+       above, same as the openExternalLink test button did).
+     - On the normal web, just window.open() as usual.
+   Any script (nsl-streaks-extra.js, nsl-main.js, etc.) should call
+   this instead of building a raw <a target="_blank"> or calling
+   window.open() directly for anything Discord-Activity-facing. */
+async function nslOpenExternalLink(url) {
+  if (IS_DISCORD) {
+    try {
+      const ready = await window.__nslDiscordSdkReadyPromise;
+      const sdk = window.__nslDiscordSdk;
+      if (ready && sdk) {
+        return sdk.commands.openExternalLink({ url });
+      }
+      console.warn('[NSL] openExternalLink: SDK not ready, link not opened:', url);
+    } catch (e) {
+      console.warn('[NSL] openExternalLink failed:', e);
+    }
+    return null;
+  }
+  window.open(url, '_blank', 'noopener');
+  return null;
+}
+window.nslOpenExternalLink = nslOpenExternalLink;
+
 function nslPreserveDiscordParams(targetUrl) {
   if (!NSL_FRAME_ID && !NSL_INSTANCE_ID) return targetUrl;
   const qs = window.location.search;
