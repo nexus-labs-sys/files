@@ -65,7 +65,7 @@ if (IS_DISCORD) {
     try {
       if (typeof patchUrlMappings === "function") {
         patchUrlMappings([
-          { prefix: "/worker", target: "green-thunder-d974.priyan-node.workers.dev" },
+          { prefix: "/worker", target: "aged-cloud-bfd5.priyan-node.workers.dev" },
           { prefix: "/firebase-auth", target: "identitytoolkit.googleapis.com" },
           { prefix: "/firebase-token", target: "securetoken.googleapis.com" },
         ], { patchFetch: true, patchXhr: true, patchWebSocket: false, patchSrcAttributes: false });
