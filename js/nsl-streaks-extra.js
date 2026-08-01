@@ -1,3 +1,4 @@
+
 // #------------------------------------
 /* ═════════════════════════════════════════════════════════════
    nsl-streak-extras.js
@@ -324,37 +325,10 @@
    array empty and this section just won't render anything.
 ═══════════════════════════════════════════════════════════════ */
 (function () {
-  console.log('[NSL] nsl-streaks-extra.js LOADED — patched build with Discord openExternalLink routing (build: 2026-07-30-v3)');
   const NSL_ESSENTIAL_LINKS = [
     { label: 'Discord', url: 'https://discord.gg/9pBJs3w9RU', icon: '💬' },
     { label: 'Website', url: 'https://quietplace.space', icon: '🌐' },
   ];
-
-  /* A plain <a target="_blank"> gets silently blocked inside Discord's
-     sandboxed Activity iframe. Reuse the ONE shared SDK instance from
-     nsl-data-core.js (window.__nslDiscordSdk) instead of creating a
-     new one. Outside Discord, this no-ops and the native <a> click
-     just works.
-
-     Uses EVENT DELEGATION on the (stable, never-recreated) row
-     container instead of attaching a listener to each individual <a>
-     pill — this way the click still works even if something else
-     ever re-renders/recreates the pill elements themselves. */
-  function nslOpenEssentialLink(e, url) {
-    if (typeof IS_DISCORD === 'undefined' || !IS_DISCORD) return; // let native <a> handle it
-    e.preventDefault();
-
-    Promise.resolve(window.__nslDiscordSdkReadyPromise).then((isReady) => {
-      const sdk = window.__nslDiscordSdk;
-      if (isReady && sdk && sdk.commands && typeof sdk.commands.openExternalLink === 'function') {
-        sdk.commands.openExternalLink({ url })
-          .then(res => console.log('[NSL] Essential link openExternalLink resolved:', res))
-          .catch(err => console.error('[NSL] Essential link openExternalLink rejected:', err));
-      } else {
-        console.warn('[NSL] Discord SDK not ready yet for essential link — try again in a moment.');
-      }
-    });
-  }
 
   function _injectStyle() {
     if (document.getElementById('nsl-links-style')) return;
@@ -387,21 +361,9 @@
       a.href = l.url;
       a.target = '_blank';
       a.rel = 'noopener';
-      a.dataset.nslLinkUrl = l.url;
       a.innerHTML = '<span>' + (l.icon || '🔗') + '</span><span>' + l.label + '</span>';
       row.appendChild(a);
     });
-
-    // Event delegation: one listener on the row, matched by data attribute,
-    // rather than one listener per pill. Survives the pills being recreated.
-    if (!row.dataset.nslDelegated) {
-      row.addEventListener('click', (e) => {
-        const a = e.target.closest('a[data-nsl-link-url]');
-        if (!a || !row.contains(a)) return;
-        nslOpenEssentialLink(e, a.dataset.nslLinkUrl);
-      });
-      row.dataset.nslDelegated = '1';
-    }
   }
 
   if (typeof nslOnReady === 'function') nslOnReady(buildUI);

@@ -26,7 +26,7 @@ if (IS_DISCORD && window.DiscordSDKLib && window.DiscordSDKLib.patchUrlMappings)
 
 const WORKER_PREFIX = IS_DISCORD
   ? '/worker'
-  : 'https://aged-cloud-bfd5.priyan-node.workers.dev';   // no trailing slash
+  : 'https://aged-cloud-bfd5.priyan-node.workers.dev/';
 
 const NSL_DISCORD_APP_ID = '1532256337990389880';
 
@@ -47,7 +47,9 @@ window.__nslDiscordSdkReadyPromise = Promise.resolve(false);
 
 if (IS_DISCORD && window.DiscordSDKLib && typeof window.DiscordSDKLib.DiscordSDK === 'function') {
   try {
-    __nslDiscordSdk = new window.DiscordSDKLib.DiscordSDK(NSL_DISCORD_APP_ID);
+    __nslDiscordSdk = new window.DiscordSDKLib.DiscordSDK(NSL_DISCORD_APP_ID, {
+      instanceId: NSL_INSTANCE_ID || NSL_FRAME_ID
+    });
     window.__nslDiscordSdk = __nslDiscordSdk;
     window.__nslDiscordSdkReadyPromise = __nslDiscordSdk.ready()
       .then(() => {
@@ -362,7 +364,16 @@ async function nslSyncFromFirestore() {
       } else {
         const cached = JSON.parse(localStorage.getItem('nsl_user') || 'null');
         if (!cached) {
-          window.location.href = nslPreserveDiscordParams('index.html');
+          // Single-page app now (login screen lives inside app.html) — show
+          // it in place. Done directly here (not via window.nslShowLoginGate)
+          // because this Firebase callback can fire before nsl-login.js —
+          // loaded after this file — has finished executing.
+          const appEl = document.getElementById('app-content');
+          const gateEl = document.getElementById('login-gate');
+          if (appEl) appEl.style.display = 'none';
+          if (gateEl) gateEl.style.display = '';
+          _uid = null;
+          _nslFireReady();
           return;
         }
         _uid = null;
@@ -380,9 +391,12 @@ function handleLogout() {
   const doRedirect = () => {
     localStorage.removeItem('nsl_user');
     localStorage.removeItem(NSL_UID_KEY);
-    document.body.style.transition = 'opacity 0.5s ease';
-    document.body.style.opacity = '0';
-    setTimeout(() => { window.location.href = nslPreserveDiscordParams('app.html'); }, 520);
+    // Single-page app now — just swap back to the login screen in place,
+    // no navigation/reload needed.
+    const appEl = document.getElementById('app-content');
+    const gateEl = document.getElementById('login-gate');
+    if (appEl) appEl.style.display = 'none';
+    if (gateEl) gateEl.style.display = '';
   };
   if (window._nslSignOut) window._nslSignOut().then(doRedirect).catch(doRedirect);
   else doRedirect();
