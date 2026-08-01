@@ -1015,7 +1015,21 @@ function resetTimer() {
   $msg.textContent = 'Begin when you are ready.'; sessionStartTime = null;
   localStorage.removeItem(NSL_CLOCK_KEY); clearTimerBroadcast(); updateHubBtn();
 }
-function skipSession() { if (deepWorkActive) return; if (running) stopTimer(); onSessionEnd(); }
+function skipSession() {
+  if (deepWorkActive) return;
+  if (running) { running = false; clearInterval(interval); }
+  timerEndsAt = null; sessionStartTime = null;
+  localStorage.removeItem(NSL_CLOCK_KEY); clearTimerBroadcast(); updateHubBtn(); broadcastTimerState();
+  $playBtn.textContent = '▶'; $playBtn.classList.remove('running');
+  if (currentMode === 'focus' || currentMode === 'sixty') {
+    showNotify('Session skipped — no credit given.');
+    switchMode('break');
+  } else if (currentMode === 'break' || currentMode === 'long') {
+    showNotify('Break skipped.'); switchMode('focus');
+  } else {
+    switchMode('focus');
+  }
+}
 
 function onSessionEnd() {
   $playBtn.textContent = '▶'; $playBtn.classList.remove('running'); playBell();

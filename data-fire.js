@@ -1221,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('mobile-focus-btn').addEventListener('click', openFocusApp);
 
   /* ── Theme ── */
-  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
   document.getElementById('mobile-theme-toggle').addEventListener('click', toggleTheme);
   document.querySelectorAll('.theme-btn').forEach(btn =>
     btn.addEventListener('click', () => setManualTheme(btn.dataset.theme))

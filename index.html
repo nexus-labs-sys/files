@@ -478,6 +478,7 @@
 #view-hub .pill-btn{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:50px;border:1px solid var(--border);background:var(--bg-card);cursor:pointer;font-size:12px;color:var(--text-dim);transition:var(--transition);font-family:"DM Sans",sans-serif;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 #view-hub .pill-btn:hover{border-color:var(--border-glow);color:var(--accent);background:var(--accent-dim)}
 #view-hub .pill-btn .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse-dot 2s ease-in-out infinite;pointer-events:none}
+.theme-btn.active{border-color:var(--accent);color:var(--accent)}
 @keyframes  pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(0.8)}}
 #view-hub .focus-link-btn{padding:8px 18px;border-radius:50px;background:linear-gradient(135deg,var(--accent) 0%,color-mix(in srgb,var(--accent) 70%,#000) 100%);color:white;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:var(--transition);font-family:"DM Sans",sans-serif;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 #view-hub .focus-link-btn:hover{transform:translateY(-1px)}
@@ -724,9 +725,9 @@
 #view-hub .drawer-item:hover, #view-hub .drawer-item:active{background:var(--accent-soft);border-color:var(--border-glow);color:var(--accent)}
 @media (max-width:640px){#view-hub #timer-sync-widget{left:10px;bottom:calc(80px + env(safe-area-inset-bottom));max-width:calc(100vw - 20px);min-width:0}#view-hub .app{grid-template-columns:1fr}#view-hub .sidebar{display:none}#view-hub .bottom-nav{display:block}#view-hub .mobile-hero{display:block}#view-hub .main{margin-left:0;padding:14px 14px calc(90px + env(safe-area-inset-bottom))}#view-hub .topbar{display:none}#view-hub .grid-2, #view-hub .grid-3{grid-template-columns:1fr}#view-hub .col-span-2{grid-column:span 1}#view-hub .card{padding:18px 16px;border-radius:16px}#view-hub .card:hover{transform:none}#view-hub .streak-hero{flex-direction:column;align-items:flex-start;gap:16px}#view-hub .streak-flame{width:70px;height:70px}#view-hub .streak-big{font-size:42px}#view-hub .week-dots{gap:6px}#view-hub .week-dot{width:30px;height:30px;font-size:9px}#view-hub .heatmap-grid{grid-template-columns:repeat(10,1fr);gap:4px}#view-hub .calendar-stats-grid{grid-template-columns:repeat(2,1fr) !important}#view-hub .settings-grid{grid-template-columns:1fr}#view-hub .toast{bottom:calc(80px + env(safe-area-inset-bottom));right:14px;left:14px}#view-hub .view-header{margin-bottom:16px}#view-hub .view-header h2{font-size:18px}#view-hub .notes-area{min-height:200px}#view-hub .stat-val{font-size:30px}#view-hub .chart-wrap{height:80px}#view-hub .chart-bars{height:68px}#view-hub .topbar-right{display:none}#view-hub .modal-input{font-size:16px}#view-hub .mood-btn{padding:10px 8px;min-width:48px;font-size:20px}}
 @media (max-width:900px){#view-hub .grid-3{grid-template-columns:1fr 1fr}#view-hub .col-span-2{grid-column:span 1}}
-#view-hub.discord-activity .card:hover{transform:none}
-#view-hub.discord-activity #particles-wrap{display:none}
-#view-hub.discord-activity .particle{display:none}
+body.discord-activity #view-hub .card:hover{transform:none}
+body.discord-activity #view-hub #particles-wrap{display:none}
+body.discord-activity #view-hub .particle{display:none}
 #view-hub .ycal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
 #view-hub .ycal-dow span{text-align:center;font-size:9.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em}
 #view-hub .ycal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
@@ -1713,10 +1714,10 @@
   <div class="nav-btn" id="nav-focus"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><div class="tooltip">Focus Timer</div></div>
   <div class="nav-btn" id="nav-settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><div class="tooltip">Settings</div></div>
   <div class="sidebar-spacer"></div>
-  <div class="theme-toggle-btn" id="theme-toggle">
+  <!-- <div class="theme-toggle-btn" id="theme-toggle">
     <svg id="theme-icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     <svg id="theme-icon-moon" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-  </div>
+  </div> -->
   <div class="sidebar-avatar" id="sidebar-avatar">A</div>
 </div>
 

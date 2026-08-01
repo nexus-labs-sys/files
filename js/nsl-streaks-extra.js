@@ -130,7 +130,7 @@
     const style = document.createElement('style');
     style.id = 'nsl-bg-style';
     style.textContent = `
-      #nsl-bg-photo{position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;background-repeat:no-repeat;transition:opacity .6s ease;opacity:0;pointer-events:none}
+      #nsl-bg-photo{position:fixed;inset:0;z-index:0;background-size:cover;background-position:center;background-repeat:no-repeat;transition:opacity .6s ease;opacity:0;pointer-events:none}
       body.nsl-bg-active #nsl-bg-photo{opacity:1}
       body.nsl-bg-active #bg-layer{display:none}
       body.nsl-bg-active #particles-wrap{display:none}
@@ -380,4 +380,31 @@
 
   if (typeof nslOnReady === 'function') nslOnReady(buildUI);
   else document.addEventListener('DOMContentLoaded', buildUI);
+})();
+
+(function () {
+  function applyHubTheme(mode) {
+    const hub = document.getElementById('view-hub');
+    if (!hub) return;
+    let night;
+    if (mode === 'night') night = true;
+    else if (mode === 'day') night = false;
+    else { const h = new Date().getHours(); night = (h < 6 || h >= 18); }
+    hub.classList.toggle('night', night);
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === mode));
+    try { localStorage.setItem('nsl_hub_theme', mode); } catch (_) { }
+  }
+  window.nslApplyHubTheme = applyHubTheme;
+
+  function init() {
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => applyHubTheme(btn.dataset.theme));
+    });
+    let saved = 'auto';
+    try { saved = localStorage.getItem('nsl_hub_theme') || 'auto'; } catch (_) { }
+    applyHubTheme(saved);
+  }
+
+  if (typeof nslOnReady === 'function') nslOnReady(init);
+  else document.addEventListener('DOMContentLoaded', init);
 })();
