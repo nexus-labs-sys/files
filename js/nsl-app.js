@@ -112,6 +112,38 @@ if (IS_DISCORD && window.DiscordSDKLib && typeof window.DiscordSDKLib.DiscordSDK
   }
 }
 
+/* Rebuilds the shared SDK instance + ready promise from scratch. Needed
+   because if sdk.ready() hangs (never resolves/rejects — seen after
+   reloading just the Activity iframe rather than relaunching it from
+   Discord), window.__nslDiscordSdkReadyPromise stays pending forever;
+   simply retrying runDiscordAuth() would just re-await that same dead
+   promise and time out again every time. Called from the retry button. */
+function nslReinitDiscordSdk() {
+  if (!(IS_DISCORD && window.DiscordSDKLib && typeof window.DiscordSDKLib.DiscordSDK === 'function')) {
+    return window.__nslDiscordSdkReadyPromise;
+  }
+  try {
+    __nslDiscordSdk = new window.DiscordSDKLib.DiscordSDK(NSL_DISCORD_APP_ID, {
+      instanceId: NSL_INSTANCE_ID || NSL_FRAME_ID
+    });
+    window.__nslDiscordSdk = __nslDiscordSdk;
+    window.__nslDiscordSdkReadyPromise = __nslDiscordSdk.ready()
+      .then(() => {
+        console.log('[NSL] Shared Discord SDK ready (reinit).');
+        return true;
+      })
+      .catch(e => {
+        console.warn('[NSL] Reinit ready() rejected:', e);
+        return false;
+      });
+  } catch (e) {
+    console.warn('[NSL] Reinit failed:', e);
+    window.__nslDiscordSdkReadyPromise = Promise.resolve(false);
+  }
+  return window.__nslDiscordSdkReadyPromise;
+}
+window.nslReinitDiscordSdk = nslReinitDiscordSdk;
+
 function nslPreserveDiscordParams(targetUrl) {
   if (!NSL_FRAME_ID && !NSL_INSTANCE_ID) return targetUrl;
   const qs = window.location.search;
@@ -756,6 +788,11 @@ async function runDiscordAuth() {
 
       retryBtn.onclick = () => {
         retryBtn.classList.remove("visible");
+        // Rebuild the SDK instance/ready-promise before retrying — if the
+        // previous ready() call is just hanging (not rejecting), re-running
+        // runDiscordAuth() alone would re-await the same dead promise and
+        // time out again every time.
+        nslReinitDiscordSdk();
         runDiscordAuth();
       };
     }
