@@ -362,17 +362,11 @@
     card.id = 'nsl-links-card';
     card.innerHTML = '<div class="card-title">🔗 Links</div><div class="nsl-links-row" id="nsl-links-row"></div>';
     grid.appendChild(card);
-
     const row = card.querySelector('#nsl-links-row');
     NSL_ESSENTIAL_LINKS.forEach(l => {
       const a = document.createElement('a');
       a.className = 'nsl-link-pill';
       a.href = l.url;
-      // Not target="_blank" — a real anchor navigation/new-window request
-      // is blocked in the sandboxed Discord Activity iframe (no
-      // 'allow-popups'). nslOpenExternalLink() routes through the
-      // Discord SDK when running inside an Activity, and falls back to
-      // a normal window.open() on the web.
       a.rel = 'noopener';
       a.innerHTML = '<span>' + (l.icon || '🔗') + '</span><span>' + l.label + '</span>';
       a.addEventListener('click', (e) => {
