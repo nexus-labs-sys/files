@@ -9,7 +9,7 @@ console.log("BUILD_TEST_2026_06_18_v1");
    plumbing. Flip back to false (or delete this block) once confirmed.
    ══════════════════════════════════════════════════════════════════ */
 const NSL_TEST_MODE = true;
-const NSL_TEST_URL = "htpps://quietplace.space"; // swap for your real payment link once ready() is confirmed working
+const NSL_TEST_URL = "https://quietplace.space"; // swap for your real payment link once ready() is confirmed working
 
 const DISCORD_APP_ID = "1532256337990389880";
 
@@ -74,9 +74,6 @@ if (IS_DISCORD) {
       console.warn("[NSL] URL mapping warning:", err);
     }
 
-    console.log(
-      "[NSL] URL mapping disabled for test"
-    );
     runDiscordAuth(DiscordSDK);
   }
 }
@@ -114,8 +111,11 @@ async function runDiscordAuth(DiscordSDK) {
     if (retryBtn) {
       retryBtn.classList.add("visible");
       retryBtn.onclick = () => {
-        retryBtn.classList.remove("visible");
-        runDiscordAuth(DiscordSDK);
+        /* Reload rather than re-run runDiscordAuth() with a fresh `new
+           DiscordSDK(...)`: a second instance in the same page session
+           can leave the first instance's in-flight handshake orphaned,
+           which is what produced the "Unrecognized frame ID" errors. */
+        window.location.reload();
       };
     }
 
@@ -127,15 +127,22 @@ async function runDiscordAuth(DiscordSDK) {
 
     console.log("[NSL] before sdk.ready()");
 
-    await Promise.race([
-      sdk.ready(),
-      new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error("sdk.ready timeout")),
-          10000
-        )
-      ),
-    ]);
+    /* No artificial race/timeout here anymore. sdk.ready() runs its own
+       postMessage handshake with the Discord client; racing it against a
+       short setTimeout used to abandon that handshake early while it was
+       still in flight, and the late-arriving response would then show up
+       as an "Unrecognized frame ID" RPCError because nothing was listening
+       for it anymore. Just let it resolve (or reject) on its own. A slow
+       cosmetic status update below keeps the UI from looking frozen. */
+    const slowHandshakeNotice = setTimeout(() => {
+      setGateStatus("Still connecting to Discord… this can take a bit on first load.");
+    }, 8000);
+
+    try {
+      await sdk.ready();
+    } finally {
+      clearTimeout(slowHandshakeNotice);
+    }
 
     console.log("[NSL] after sdk.ready()");
 
@@ -296,8 +303,9 @@ async function runDiscordAuth(DiscordSDK) {
       retryBtn.classList.add("visible");
 
       retryBtn.onclick = () => {
-        retryBtn.classList.remove("visible");
-        runDiscordAuth(DiscordSDK);
+        /* Same reasoning as the constructor-error retry above: reload
+           instead of creating a second DiscordSDK instance mid-session. */
+        window.location.reload();
       };
     }
   }
