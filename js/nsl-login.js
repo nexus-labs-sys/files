@@ -127,21 +127,39 @@ async function runDiscordAuth(DiscordSDK) {
 
     console.log("[NSL] before sdk.ready()");
 
-    /* No artificial race/timeout here anymore. sdk.ready() runs its own
-       postMessage handshake with the Discord client; racing it against a
-       short setTimeout used to abandon that handshake early while it was
-       still in flight, and the late-arriving response would then show up
-       as an "Unrecognized frame ID" RPCError because nothing was listening
-       for it anymore. Just let it resolve (or reject) on its own. A slow
-       cosmetic status update below keeps the UI from looking frozen. */
+    /* sdk.ready() is awaited directly — never raced against a timeout that
+       abandons it. That's what caused "Unrecognized frame ID" errors: the
+       real handshake was still in flight when we gave up on it, and its
+       late response arrived with nobody listening for it anymore.
+
+       These two timers are UI-only. They never touch/reject the real
+       promise — they just update what the person sees while it's pending,
+       and clear themselves the moment ready() actually resolves. */
+    let handshakeSettled = false;
+
     const slowHandshakeNotice = setTimeout(() => {
+      if (handshakeSettled) return;
       setGateStatus("Still connecting to Discord… this can take a bit on first load.");
     }, 8000);
+
+    const stuckHandshakeNotice = setTimeout(() => {
+      if (handshakeSettled) return;
+      setGateError(
+        "This is taking much longer than usual. You can keep waiting, or reload and try again."
+      );
+      const retryBtn = document.getElementById("btn-retry");
+      if (retryBtn) {
+        retryBtn.classList.add("visible");
+        retryBtn.onclick = () => window.location.reload();
+      }
+    }, 25000);
 
     try {
       await sdk.ready();
     } finally {
+      handshakeSettled = true;
       clearTimeout(slowHandshakeNotice);
+      clearTimeout(stuckHandshakeNotice);
     }
 
     console.log("[NSL] after sdk.ready()");
