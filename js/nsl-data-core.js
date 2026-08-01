@@ -85,6 +85,7 @@ const NSL_FIRESTORE_DEBOUNCE_MS = 1500;
 
 /* ---- MODULE STATE ---- */
 let _db = null;
+let _auth = null;
 let _uid = null;
 let _authReady = false;
 let _hasSyncedDown = false;     // <-- NEW: guards against re-fire stomping fresh writes
@@ -297,93 +298,139 @@ async function nslSyncFromFirestore() {
 }
 
 /* ---- FIREBASE INIT + AUTH (single instance, shared by every page) ---- */
+/* ---- FIREBASE INIT + AUTH (single instance, shared by every page) ---- */
 (function initFirebase() {
+
   if (!window.FirebaseBundle) {
-    console.warn('[NSL] FirebaseBundle not found — running localStorage-only.');
+    console.warn("[NSL] FirebaseBundle not found — running localStorage only.");
     _nslFireReady();
     return;
   }
+
   const {
-    initializeApp, getAuth, onAuthStateChanged,
-    getFirestore, signOut,
-    doc: _doc, getDoc: _getDoc, setDoc: _setDoc, deleteDoc: _deleteDoc
+    initializeApp,
+    getAuth,
+    onAuthStateChanged,
+    getFirestore,
+    signOut,
+    doc: _doc,
+    getDoc: _getDoc,
+    setDoc: _setDoc,
+    deleteDoc: _deleteDoc
   } = window.FirebaseBundle;
-  doc = _doc; getDoc = _getDoc; setDoc = _setDoc; deleteDoc = _deleteDoc;
+
+  doc = _doc;
+  getDoc = _getDoc;
+  setDoc = _setDoc;
+  deleteDoc = _deleteDoc;
 
   try {
+
     const app = initializeApp({
-      apiKey: 'AIzaSyAmrYGmTuoHP_sY4pG_MFan2CKZPlirbAk',
-      authDomain: 'nexus-study-lab.firebaseapp.com',
-      projectId: 'nexus-study-lab',
-      storageBucket: 'nexus-study-lab.firebasestorage.app',
-      messagingSenderId: '610669979476',
-      appId: '1:610669979476:web:de9af7a8da3cb71f720ac1'
+      apiKey: "AIzaSyAmrYGmTuoHP_sY4pG_MFan2CKZPlirbAk",
+      authDomain: "nexus-study-lab.firebaseapp.com",
+      projectId: "nexus-study-lab",
+      storageBucket: "nexus-study-lab.firebasestorage.app",
+      messagingSenderId: "610669979476",
+      appId: "1:610669979476:web:de9af7a8da3cb71f720ac1"
     });
 
-    if (!IS_DISCORD) {
-      _db = getFirestore(app);   // only instantiate Firestore SDK on web — Discord uses REST via the worker
-    }
-    const auth = getAuth(app);
-    window._nslSignOut = () => signOut(auth);
+    _auth = getAuth(app);
 
-    onAuthStateChanged(auth, async user => {
+    if (!IS_DISCORD) {
+      _db = getFirestore(app);
+    }
+
+    // Expose Firebase globally for other scripts
+    window.nslFirebase = {
+      app,
+      auth: _auth,
+      db: _db,
+      FB: window.FirebaseBundle
+    };
+
+    window._nslAuth = _auth;
+    window._nslSignOut = () => signOut(_auth);
+
+    onAuthStateChanged(_auth, async (user) => {
+
       if (user) {
+
         const prevUid = localStorage.getItem(NSL_UID_KEY);
+
         if (prevUid && prevUid !== user.uid) {
           localStorage.removeItem(getUserStorageKey(prevUid));
-          _hasSyncedDown = false; // new user on this device — allow a fresh sync-down
+          _hasSyncedDown = false;
         }
+
         localStorage.setItem(NSL_UID_KEY, user.uid);
 
-        const stored = JSON.parse(localStorage.getItem('nsl_user') || '{}');
-        localStorage.setItem('nsl_user', JSON.stringify({
-          uid: user.uid,
-          email: user.email || stored.email || '',
-          name: user.displayName || stored.name || (user.email ? user.email.split('@')[0] : 'Scholar'),
-          photo: user.photoURL || stored.photo || null,
-          guest: false
-        }));
+        const stored =
+          JSON.parse(localStorage.getItem("nsl_user") || "{}");
+
+        localStorage.setItem(
+          "nsl_user",
+          JSON.stringify({
+            uid: user.uid,
+            email: user.email || stored.email || "",
+            name:
+              user.displayName ||
+              stored.name ||
+              (user.email
+                ? user.email.split("@")[0]
+                : "Scholar"),
+            photo:
+              user.photoURL ||
+              stored.photo ||
+              null,
+            guest: false
+          })
+        );
 
         _uid = user.uid;
 
-        /* THE FIX: onAuthStateChanged can — and on localhost routinely
-           does — re-fire for the SAME signed-in user (token refresh,
-           tab regaining focus, IndexedDB persistence re-checks). Only
-           run the Firestore sync-down on a genuine first resolution
-           per page load. Re-firing must NOT re-pull from Firestore,
-           because a write still sitting in the local debounce window
-           would get silently overwritten by an older remote doc —
-           this was the cause of stats showing correctly for a moment
-           and then reverting to zero a few seconds after a session
-           completed. */
         if (!_hasSyncedDown) {
           _hasSyncedDown = true;
           await nslSyncFromFirestore();
         }
+
         _nslFireReady();
+
       } else {
-        const cached = JSON.parse(localStorage.getItem('nsl_user') || 'null');
-        if (!cached) {
-          // Single-page app now (login screen lives inside app.html) — show
-          // it in place. Done directly here (not via window.nslShowLoginGate)
-          // because this Firebase callback can fire before nsl-login.js —
-          // loaded after this file — has finished executing.
-          const appEl = document.getElementById('app-content');
-          const gateEl = document.getElementById('login-gate');
-          if (appEl) appEl.style.display = 'none';
-          if (gateEl) gateEl.style.display = '';
-          _uid = null;
-          _nslFireReady();
-          return;
-        }
+
         _uid = null;
+
+        const cached =
+          JSON.parse(localStorage.getItem("nsl_user") || "null");
+
+        if (!cached) {
+
+          const appEl =
+            document.getElementById("app-content");
+
+          const gateEl =
+            document.getElementById("login-gate");
+
+          if (appEl)
+            appEl.style.display = "none";
+
+          if (gateEl)
+            gateEl.style.display = "";
+
+        }
+
         _nslFireReady();
       }
+
     });
-  } catch (e) {
-    console.warn('[NSL] Firebase init failed (offline/Discord?):', e);
+
+  } catch (err) {
+
+    console.warn("[NSL] Firebase init failed:", err);
     _nslFireReady();
+
   }
+
 })();
 
 function handleLogout() {

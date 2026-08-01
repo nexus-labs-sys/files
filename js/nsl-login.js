@@ -8,7 +8,7 @@ console.log("BUILD_TEST_2026_06_18_v1");
    external-link opening works at all, independent of auth/payment
    plumbing. Flip back to false (or delete this block) once confirmed.
    ══════════════════════════════════════════════════════════════════ */
-const NSL_TEST_MODE = true;
+const NSL_TEST_MODE = false;
 const NSL_TEST_URL = "https://quietplace.space"; // swap for your real payment link once ready() is confirmed working
 
 const DISCORD_APP_ID = "1532256337990389880";
