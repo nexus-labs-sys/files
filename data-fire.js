@@ -1,40 +1,5 @@
-/* ─────────────────────────────────────────────────────────────
- DISCORD DETECTION — must run immediately
-───────────────────────────────────────────────────────────── */
-/*  block temp
-const IS_DISCORD = (
-  window.location.hostname.includes('discordsays.com') ||
-  window.location.hostname.includes('discord.com') ||
-  window.self !== window.top
-);
-if (IS_DISCORD) document.body.classList.add('discord-activity');
-if (IS_DISCORD && window.DiscordSDKLib && window.DiscordSDKLib.patchUrlMappings) {
-  try {
-    window.DiscordSDKLib.patchUrlMappings([
-      { prefix: '/firebase-auth', target: 'identitytoolkit.googleapis.com' },
-      { prefix: '/firebase-token', target: 'securetoken.googleapis.com' }
-    ], { patchFetch: true, patchXhr: true, patchWebSocket: false, patchSrcAttributes: false });
-  } catch (e) { console.warn('patchUrlMappings failed:', e); }
-}
-*/
-/* ─────────────────────────────────────────────────────────────
-   CONSTANTS
-───────────────────────────────────────────────────────────── */
-/* In nsl
-const NSL_KEY_PREFIX = 'nsl_data_';
-const NSL_TIMER_KEY = 'nsl_timer_state';
-const NSL_UID_KEY = 'nsl_active_uid';
 
-function getUserStorageKey(uid = _uid) {
-  if (!uid) return null;
-  return `nsl_data_${uid}`;
-}
 
-let _db = null;
-let _uid = null;
-let _authReady = false;
-
-*/
 let _domReady = false;
 function _tryRender() {
   if (_domReady) doInitialRender();
@@ -895,7 +860,7 @@ function renderMoodHistory(moods) {
 /* ─────────────────────────────────────────────────────────────
    TIMER
 ───────────────────────────────────────────────────────────── */
-let timerInterval = null, timerRunning = false, timerTotal = 25 * 60, timerRemaining = 25 * 60;
+let timerInterval = null, timerRunning = false, timerTotal = 25 * 60, timerRemaining = 25 * 60, hubSessionStartTime = null;
 
 function setPreset(mins, el) {
   if (timerRunning) return;
@@ -923,20 +888,21 @@ function hubToggleTimer() {
     const s = document.getElementById(id); if (s) s.textContent = timerRunning ? 'focusing…' : 'paused';
   });
   if (timerRunning) {
+    hubSessionStartTime = hubSessionStartTime || Date.now();
     timerInterval = setInterval(() => {
-      if (timerRemaining <= 0) { clearInterval(timerInterval); timerRunning = false; onTimerComplete(Math.round(timerTotal / 60)); return; }
+      if (timerRemaining <= 0) { clearInterval(timerInterval); timerRunning = false; const start = hubSessionStartTime; hubSessionStartTime = null; onTimerComplete(Math.round(timerTotal / 60), start); return; }
       timerRemaining--; updateTimerDisplay();
     }, 1000);
   } else { clearInterval(timerInterval); }
 }
 
 function hubResetTimer() {
-  clearInterval(timerInterval); timerRunning = false; timerRemaining = timerTotal; updateTimerDisplay();
+  clearInterval(timerInterval); timerRunning = false; timerRemaining = timerTotal; hubSessionStartTime = null; updateTimerDisplay();
   ['dash-timer-btn', 'focus-timer-btn'].forEach(id => { const b = document.getElementById(id); if (b) b.textContent = 'Start'; });
   ['dash-timer-status', 'focus-timer-status'].forEach(id => { const s = document.getElementById(id); if (s) s.textContent = 'ready'; });
 }
 
-function onTimerComplete(durationMins) {
+function onTimerComplete(durationMins, startTimeMs) {
   ['dash-timer-btn', 'focus-timer-btn'].forEach(id => { const b = document.getElementById(id); if (b) b.textContent = 'Start'; });
   ['dash-timer-status', 'focus-timer-status'].forEach(id => { const s = document.getElementById(id); if (s) s.textContent = 'done!'; });
   const data = nslLoad(), today = new Date().toDateString(), xpGained = durationMins * 5;
@@ -956,6 +922,9 @@ function onTimerComplete(durationMins) {
     data.streak.totalDays++; data.streak.lastStudyDate = today;
   }
   nslSave(data); refreshAllData(); showToast('✶', 'Session done! +' + xpGained + ' XP');
+  if (typeof window.nslReportSession === 'function') {
+    window.nslReportSession({ durationMinutes: durationMins, label: 'Focus Session', startTimeMs: startTimeMs, endTimeMs: Date.now() });
+  }
   timerRemaining = timerTotal; updateTimerDisplay();
 }
 

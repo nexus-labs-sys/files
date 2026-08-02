@@ -228,7 +228,7 @@
     {
       id: 'maint-2026-08-01',
       message: 'Scheduled update tonight — some features may be briefly unavailable.',
-      start: '2026-07-01T00:00:00',
+      start: '2026-06-06T00:00:00',
       end: '2026-12-31T00:00:00',
       link: null // optional: { label: 'Details', url: 'https://...' }
     }

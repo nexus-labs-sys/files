@@ -5,7 +5,7 @@
 
 
 
-function nslRecordSession(mins, label) { if (mins < 1) return 0; const data = nslLoad(), today = new Date().toDateString(); data.sessions.push({ date: today, duration: mins, label: label || 'Focus Session', ts: Date.now() }); const xp = mins * 5; data.xp.today += xp; data.xp.totalXP += xp; data.xp.level = Math.max(1, Math.floor(1 + data.xp.totalXP / 500)); const last = data.streak.lastStudyDate, nd = new Date(); nd.setHours(0, 0, 0, 0); const dow = new Date().getDay(); if (!data.streak.weekDays.includes(dow)) data.streak.weekDays.push(dow); if (last !== today) { if (last) { const ld = new Date(last); ld.setHours(0, 0, 0, 0); const diff = Math.round((nd - ld) / 86400000); data.streak.current = diff === 1 ? data.streak.current + 1 : 1; } else { data.streak.current = 1; } if (data.streak.current > data.streak.longest) data.streak.longest = data.streak.current; data.streak.totalDays++; data.streak.lastStudyDate = today; } if (data.streak.weekDays.length > 7) data.streak.weekDays = data.streak.weekDays.slice(-7); nslSave(data); updateStatsBar(data); return xp; }
+function nslRecordSession(mins, label, startTimeMs) { if (mins < 1) return 0; const data = nslLoad(), today = new Date().toDateString(); data.sessions.push({ date: today, duration: mins, label: label || 'Focus Session', ts: Date.now() }); const xp = mins * 5; data.xp.today += xp; data.xp.totalXP += xp; data.xp.level = Math.max(1, Math.floor(1 + data.xp.totalXP / 500)); const last = data.streak.lastStudyDate, nd = new Date(); nd.setHours(0, 0, 0, 0); const dow = new Date().getDay(); if (!data.streak.weekDays.includes(dow)) data.streak.weekDays.push(dow); if (last !== today) { if (last) { const ld = new Date(last); ld.setHours(0, 0, 0, 0); const diff = Math.round((nd - ld) / 86400000); data.streak.current = diff === 1 ? data.streak.current + 1 : 1; } else { data.streak.current = 1; } if (data.streak.current > data.streak.longest) data.streak.longest = data.streak.current; data.streak.totalDays++; data.streak.lastStudyDate = today; } if (data.streak.weekDays.length > 7) data.streak.weekDays = data.streak.weekDays.slice(-7); nslSave(data); updateStatsBar(data); if (typeof window.nslReportSession === 'function') { window.nslReportSession({ durationMinutes: mins, label: label || 'Focus Session', startTimeMs: startTimeMs || (Date.now() - mins * 60000), endTimeMs: Date.now() }); } return xp; }
 
 /* ====== TIMER STATE BROADCAST ====== */
 function broadcastTimerState() {
@@ -1003,7 +1003,7 @@ function stopTimer() {
   $playBtn.textContent = '▶'; $playBtn.classList.remove('running');
   if (sessionStartTime && ['focus', 'sixty', 'deep'].includes(currentMode)) {
     const el = Math.floor((Date.now() - sessionStartTime) / 60000);
-    if (el >= 1) { const xp = nslRecordSession(el, MODES[currentMode].label + ' (partial)'); if (xp) flashXP(xp); }
+    if (el >= 1) { const xp = nslRecordSession(el, MODES[currentMode].label + ' (partial)', sessionStartTime); if (xp) flashXP(xp); }
   }
   sessionStartTime = null; localStorage.removeItem(NSL_CLOCK_KEY); broadcastTimerState(); updateHubBtn();
 }
@@ -1015,8 +1015,26 @@ function resetTimer() {
   $msg.textContent = 'Begin when you are ready.'; sessionStartTime = null;
   localStorage.removeItem(NSL_CLOCK_KEY); clearTimerBroadcast(); updateHubBtn();
 }
+function playSkipSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [880, 659.25]; // A5 then E5 — quick, light, downward
+    notes.forEach((freq, i) => {
+      const delay = i * 0.09;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.001, ctx.currentTime + delay);
+      g.gain.linearRampToValueAtTime(0.14, ctx.currentTime + delay + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.35);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + delay); o.stop(ctx.currentTime + delay + 0.4);
+    });
+  } catch (_) { }
+}
 function skipSession() {
   if (deepWorkActive) return;
+  playSkipSound();
   if (running) { running = false; clearInterval(interval); }
   timerEndsAt = null; sessionStartTime = null;
   localStorage.removeItem(NSL_CLOCK_KEY); clearTimerBroadcast(); updateHubBtn(); broadcastTimerState();
@@ -1034,14 +1052,15 @@ function skipSession() {
 function onSessionEnd() {
   $playBtn.textContent = '▶'; $playBtn.classList.remove('running'); playBell();
   const elMins = sessionStartTime ? Math.max(1, Math.round((Date.now() - sessionStartTime) / 60000)) : Math.round(totalSecs / 60);
+  const sessStart = sessionStartTime;
   sessionStartTime = null; timerEndsAt = null;
   localStorage.removeItem(NSL_CLOCK_KEY); clearTimerBroadcast();
   if (deepWorkActive) {
-    const xp = nslRecordSession(elMins, MODES[currentMode].label + ' (Deep Focus)');
+    const xp = nslRecordSession(elMins, MODES[currentMode].label + ' (Deep Focus)', sessStart);
     if (xp) flashXP(xp); exitDeepWork(); showNotify('Deep Focus complete. Remarkable.'); return;
   }
   if (currentMode === 'focus' || currentMode === 'sixty') {
-    const xp = nslRecordSession(elMins, MODES[currentMode].label);
+    const xp = nslRecordSession(elMins, MODES[currentMode].label, sessStart);
     if (xp) flashXP(xp); pomodoroInCycle++; updateDots();
     if (pomodoroInCycle >= 4) { pomodoroInCycle = 0; showNotify('4 sessions done. Long break earned.'); switchMode('long'); }
     else { showNotify('Done! +' + xp + ' XP. Short break.'); switchMode('break'); }
@@ -1124,6 +1143,8 @@ function toggleDeep() {
 
 /* ====== BELL ====== */
 function playBell() { try { const ctx = new (window.AudioContext || window.webkitAudioContext)();[0, .3, .6].forEach((delay, i) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = [523.25, 659.25, 783.99][i]; o.type = 'sine'; g.gain.setValueAtTime(.28, ctx.currentTime + delay); g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + delay + 2.2); o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime + delay); o.stop(ctx.currentTime + delay + 2.5); }); } catch (_) { } }
+
+
 
 /* ====== NOTIFY ====== */
 let ntTimer = null;
